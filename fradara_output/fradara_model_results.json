@@ -1,0 +1,724 @@
+{
+  "meta": {
+    "project": "Fradara — AI Fraud Detection Platform",
+    "version": "3.0.0",
+    "modelType": "Anomaly Detection — Isolation Forest + Autoencoder Ensemble",
+    "generatedAt": "2026-05-16T15:43:24.302965",
+    "datasetInfo": {
+      "totalRows": 5000,
+      "normalRows": 4500,
+      "fraudRows": 500,
+      "fraudRatePct": 10.0,
+      "featureCount": 27,
+      "features": [
+        "amountTotal",
+        "unitPrice",
+        "quantity",
+        "log_amount",
+        "log_unitprice",
+        "amount_zscore",
+        "amount_vs_category_median",
+        "amount_consistency_ratio",
+        "amount_vs_employee_avg",
+        "purchase_month",
+        "purchase_dayofweek",
+        "purchase_quarter",
+        "is_weekend",
+        "days_to_approval",
+        "days_purchase_to_invoice",
+        "days_invoice_to_payment",
+        "vendor_age_at_contract",
+        "employee_daily_tx",
+        "vendor_tx_count",
+        "invoice_frequency",
+        "employee_tx_frequency",
+        "transaction_type_enc",
+        "department_enc",
+        "location_enc",
+        "category_enc",
+        "itemDescription_enc",
+        "status_enc"
+      ]
+    }
+  },
+  "trainingPipeline": {
+    "description": "Normal dibagi 3: train 72%, val 8%, test-normal 20%. Semua fraud masuk test saja.",
+    "splits": {
+      "train": {
+        "rows": 3240,
+        "label": "normal only"
+      },
+      "val": {
+        "rows": 360,
+        "label": "normal only"
+      },
+      "test": {
+        "rows": 1400,
+        "label": "normal + all fraud"
+      }
+    },
+    "scalerFitOn": "train set only (no leakage)",
+    "thresholdFrom": "val set — percentile ke-90",
+    "thresholdValue": 48.15,
+    "ensembleWeights": {
+      "isolationForest": 0.3,
+      "autoencoder": 0.7
+    }
+  },
+  "models": {
+    "baseline": {
+      "description": "Z-Score amountTotal — tanpa ML",
+      "testMetrics": {
+        "accuracy": 0.3571,
+        "precision": 0.3571,
+        "recall": 1.0,
+        "f1Score": 0.5263,
+        "rocAuc": 0.9267,
+        "prAuc": 0.9197,
+        "confusionMatrix": {
+          "trueNegative": 0,
+          "falsePositive": 900,
+          "falseNegative": 0,
+          "truePositive": 500
+        }
+      }
+    },
+    "isolationForest": {
+      "description": "Isolation Forest — unsupervised",
+      "hyperparameters": {
+        "nEstimators": 300,
+        "contamination": 0.1
+      },
+      "testMetrics": {
+        "accuracy": 0.8743,
+        "precision": 0.7596,
+        "recall": 0.948,
+        "f1Score": 0.8434,
+        "rocAuc": 0.9715,
+        "prAuc": 0.9563,
+        "confusionMatrix": {
+          "trueNegative": 750,
+          "falsePositive": 150,
+          "falseNegative": 26,
+          "truePositive": 474
+        }
+      }
+    },
+    "autoencoder": {
+      "description": "Autoencoder Neural Net — reconstruction error",
+      "architecture": {
+        "encoder": "27→64→32→8",
+        "decoder": "8→32→64→27",
+        "totalParams": 8803
+      },
+      "training": {
+        "epochsRun": 150,
+        "batchSize": 64,
+        "finalTrainLoss": 0.021418,
+        "finalValLoss": 0.016805,
+        "bestValLoss": 0.016799,
+        "earlyStopping": false
+      },
+      "testMetrics": {
+        "accuracy": 0.935,
+        "precision": 0.8508,
+        "recall": 0.992,
+        "f1Score": 0.916,
+        "rocAuc": 0.9931,
+        "prAuc": 0.981,
+        "confusionMatrix": {
+          "trueNegative": 813,
+          "falsePositive": 87,
+          "falseNegative": 4,
+          "truePositive": 496
+        }
+      }
+    },
+    "ensemble": {
+      "description": "Weighted Ensemble ISO 30% + AE 70%",
+      "weights": {
+        "isolationForest": 0.3,
+        "autoencoder": 0.7
+      },
+      "threshold": {
+        "value": 0.4815,
+        "value100": 48.15
+      },
+      "testMetrics": {
+        "accuracy": 0.9393,
+        "precision": 0.8609,
+        "recall": 0.99,
+        "f1Score": 0.9209,
+        "rocAuc": 0.9966,
+        "prAuc": 0.9953,
+        "confusionMatrix": {
+          "trueNegative": 820,
+          "falsePositive": 80,
+          "falseNegative": 5,
+          "truePositive": 495
+        }
+      }
+    }
+  },
+  "comparison": {
+    "evaluatedOn": "test set (unseen, threshold from val set)",
+    "improvementVsBaseline": {
+      "f1ScorePct": 74.98,
+      "rocAucPct": 7.54,
+      "recallPct": -1.0
+    },
+    "results": [
+      {
+        "model": "Baseline (Z-Score)",
+        "f1": 0.5263,
+        "rocAuc": 0.9267,
+        "prAuc": 0.9197,
+        "recall": 1.0,
+        "precision": 0.3571,
+        "tp": 500,
+        "fp": 900,
+        "fn": 0
+      },
+      {
+        "model": "Isolation Forest",
+        "f1": 0.8434,
+        "rocAuc": 0.9715,
+        "prAuc": 0.9563,
+        "recall": 0.948,
+        "precision": 0.7596,
+        "tp": 474,
+        "fp": 150,
+        "fn": 26
+      },
+      {
+        "model": "Autoencoder",
+        "f1": 0.916,
+        "rocAuc": 0.9931,
+        "prAuc": 0.981,
+        "recall": 0.992,
+        "precision": 0.8508,
+        "tp": 496,
+        "fp": 87,
+        "fn": 4
+      },
+      {
+        "model": "Ensemble (Final)",
+        "f1": 0.9209,
+        "rocAuc": 0.9966,
+        "prAuc": 0.9953,
+        "recall": 0.99,
+        "precision": 0.8609,
+        "tp": 495,
+        "fp": 80,
+        "fn": 5
+      }
+    ]
+  },
+  "riskLevelSchema": {
+    "HIGH": {
+      "range": "75–100",
+      "action": "Tindak segera, blokir transaksi"
+    },
+    "MEDIUM": {
+      "range": "45–74",
+      "action": "Review manual oleh auditor"
+    },
+    "LOW": {
+      "range": "20–44",
+      "action": "Monitor dan catat"
+    },
+    "SAFE": {
+      "range": "0–19",
+      "action": "Transaksi normal"
+    }
+  },
+  "samplePredictions": [
+    {
+      "purchaseId": "PO90820776",
+      "employeeId": "EMP0131",
+      "department": "HR",
+      "transactionType": "procurement",
+      "amountTotal": 19191000.0,
+      "category": "Perjalanan Dinas",
+      "purchaseDate": "2023-12-31",
+      "vendorName": "CV Firmansyah Tbk",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Nominal 13.2× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO51167558",
+      "employeeId": "EMP0144",
+      "department": "R&D",
+      "transactionType": "procurement",
+      "amountTotal": 13473000.0,
+      "category": "Perjalanan Dinas",
+      "purchaseDate": "2023-10-18",
+      "vendorName": "Perum Kuswandari Mandala",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Vendor sangat baru (3 hari sejak registrasi)",
+        "Nominal 9.3× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO72433678",
+      "employeeId": "EMP0097",
+      "department": "Finance",
+      "transactionType": "expense",
+      "amountTotal": 29216000.0,
+      "category": "Akomodasi",
+      "purchaseDate": "2022-08-07",
+      "vendorName": "Perum Yuniar Gunarto",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Nominal 23.4× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO99464999",
+      "employeeId": "EMP0035",
+      "department": "HR",
+      "transactionType": "procurement",
+      "amountTotal": 18766000.0,
+      "category": "Perjalanan Dinas",
+      "purchaseDate": "2024-03-22",
+      "vendorName": "Perum Setiawan Tbk",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Approval date mendahului purchase date (-10 hari)",
+        "Nominal 12.9× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO66611557",
+      "employeeId": "EMP0064",
+      "department": "HR",
+      "transactionType": "procurement",
+      "amountTotal": 4110000.0,
+      "category": "Makan & Hiburan",
+      "purchaseDate": "2023-04-01",
+      "vendorName": "PT Purwanti Maulana (Persero) Tbk",
+      "scores": {
+        "isolationForest": 93.88,
+        "autoencoder": 100.0,
+        "ensemble": 98.16,
+        "fraudScore": 98.16
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Nominal 11.6× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 93.9)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO71975714",
+      "employeeId": "EMP0051",
+      "department": "HR",
+      "transactionType": "expense",
+      "amountTotal": 3488000.0,
+      "category": "Transportasi",
+      "purchaseDate": "2022-04-20",
+      "vendorName": "PD Setiawan (Persero) Tbk",
+      "scores": {
+        "isolationForest": 74.16,
+        "autoencoder": 100.0,
+        "ensemble": 92.25,
+        "fraudScore": 92.25
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Vendor sangat baru (12 hari sejak registrasi)",
+        "Nominal 12.2× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 74.2)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO2625534",
+      "employeeId": "EMP0080",
+      "department": "R&D",
+      "transactionType": "expense",
+      "amountTotal": 16402000.0,
+      "category": "Perjalanan Dinas",
+      "purchaseDate": "2022-10-12",
+      "vendorName": "PT Mardhiyah Tbk",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Payment date mendahului invoice date (-1 hari)",
+        "Nominal 11.3× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO76276622",
+      "employeeId": "GHOST0019",
+      "department": "Legal",
+      "transactionType": "procurement",
+      "amountTotal": 4157000.0,
+      "category": "Komunikasi",
+      "purchaseDate": "2024-02-20",
+      "vendorName": "PT Nuraini Wasita",
+      "scores": {
+        "isolationForest": 84.39,
+        "autoencoder": 100.0,
+        "ensemble": 95.32,
+        "fraudScore": 95.32
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Nominal 7.6× di atas median kategori",
+        "Employee ID tidak dikenali atau sangat jarang bertransaksi",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 84.4)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO24756384",
+      "employeeId": "EMP0044",
+      "department": "Finance",
+      "transactionType": "procurement",
+      "amountTotal": 8213000.0,
+      "category": "Komunikasi",
+      "purchaseDate": "2023-12-08",
+      "vendorName": "UD Natsir (Persero) Tbk",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Vendor sangat baru (1 hari sejak registrasi)",
+        "Nominal 15.0× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO66513828",
+      "employeeId": "EMP0047",
+      "department": "Operations",
+      "transactionType": "expense",
+      "amountTotal": 9993000.0,
+      "category": "Akomodasi",
+      "purchaseDate": "2024-10-20",
+      "vendorName": "CV Setiawan Mustofa",
+      "scores": {
+        "isolationForest": 100.0,
+        "autoencoder": 100.0,
+        "ensemble": 100.0,
+        "fraudScore": 100.0
+      },
+      "riskLevel": "HIGH",
+      "predictedFraud": true,
+      "actualFraud": true,
+      "correct": true,
+      "reasons": [
+        "Payment date mendahului invoice date (-4 hari)",
+        "Nominal 8.0× di atas median kategori",
+        "Isolation Forest: terisolasi dari distribusi normal (score: 100.0)",
+        "Autoencoder: pola tidak dikenali, reconstruction error tinggi (score: 100.0)"
+      ]
+    },
+    {
+      "purchaseId": "PO95124309",
+      "employeeId": "EMP0006",
+      "department": "IT",
+      "transactionType": "procurement",
+      "amountTotal": 1967000.0,
+      "category": "Pelatihan",
+      "purchaseDate": "2024-12-19",
+      "vendorName": "PT Dongoran",
+      "scores": {
+        "isolationForest": 41.3,
+        "autoencoder": 29.58,
+        "ensemble": 33.1,
+        "fraudScore": 33.1
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": true,
+      "correct": false,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO50424167",
+      "employeeId": "EMP0141",
+      "department": "Operations",
+      "transactionType": "procurement",
+      "amountTotal": 724000.0,
+      "category": "Perlengkapan Kantor",
+      "purchaseDate": "2022-05-14",
+      "vendorName": "UD Natsir (Persero) Tbk",
+      "scores": {
+        "isolationForest": 39.35,
+        "autoencoder": 40.99,
+        "ensemble": 40.5,
+        "fraudScore": 40.5
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": true,
+      "correct": false,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO26780851",
+      "employeeId": "EMP0017",
+      "department": "HR",
+      "transactionType": "expense",
+      "amountTotal": 964000.0,
+      "category": "Lain-lain",
+      "purchaseDate": "2023-01-30",
+      "vendorName": "PT Anggriawan (Persero) Tbk",
+      "scores": {
+        "isolationForest": 28.66,
+        "autoencoder": 30.24,
+        "ensemble": 29.77,
+        "fraudScore": 29.77
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": true,
+      "correct": false,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO84880608",
+      "employeeId": "EMP0140",
+      "department": "Operations",
+      "transactionType": "procurement",
+      "amountTotal": 2623000.0,
+      "category": "Perjalanan Dinas",
+      "purchaseDate": "2023-12-22",
+      "vendorName": "PT Saragih Pudjiastuti",
+      "scores": {
+        "isolationForest": 59.71,
+        "autoencoder": 40.73,
+        "ensemble": 46.42,
+        "fraudScore": 46.42
+      },
+      "riskLevel": "MEDIUM",
+      "predictedFraud": false,
+      "actualFraud": true,
+      "correct": false,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO72337552",
+      "employeeId": "EMP0138",
+      "department": "HR",
+      "transactionType": "procurement",
+      "amountTotal": 767000.0,
+      "category": "Makan & Hiburan",
+      "purchaseDate": "2023-10-01",
+      "vendorName": "CV Hartati (Persero) Tbk",
+      "scores": {
+        "isolationForest": 34.13,
+        "autoencoder": 48.29,
+        "ensemble": 44.04,
+        "fraudScore": 44.04
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": true,
+      "correct": false,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO52130735",
+      "employeeId": "EMP0106",
+      "department": "Operations",
+      "transactionType": "expense",
+      "amountTotal": 620000.0,
+      "category": "Perjalanan Dinas",
+      "purchaseDate": "2023-07-29",
+      "vendorName": "Perum Wibowo",
+      "scores": {
+        "isolationForest": 40.15,
+        "autoencoder": 42.65,
+        "ensemble": 41.9,
+        "fraudScore": 41.9
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": false,
+      "correct": true,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO49053253",
+      "employeeId": "EMP0057",
+      "department": "Marketing",
+      "transactionType": "procurement",
+      "amountTotal": 451000.0,
+      "category": "Perlengkapan Kantor",
+      "purchaseDate": "2024-12-19",
+      "vendorName": "UD Narpati (Persero) Tbk",
+      "scores": {
+        "isolationForest": 15.53,
+        "autoencoder": 12.42,
+        "ensemble": 13.36,
+        "fraudScore": 13.36
+      },
+      "riskLevel": "SAFE",
+      "predictedFraud": false,
+      "actualFraud": false,
+      "correct": true,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO85546154",
+      "employeeId": "EMP0035",
+      "department": "Legal",
+      "transactionType": "procurement",
+      "amountTotal": 142000.0,
+      "category": "Transportasi",
+      "purchaseDate": "2024-05-26",
+      "vendorName": "UD Novitasari (Persero) Tbk",
+      "scores": {
+        "isolationForest": 67.05,
+        "autoencoder": 19.64,
+        "ensemble": 33.86,
+        "fraudScore": 33.86
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": false,
+      "correct": true,
+      "reasons": [
+        "Isolation Forest: terisolasi dari distribusi normal (score: 67.1)"
+      ]
+    },
+    {
+      "purchaseId": "PO60317404",
+      "employeeId": "EMP0029",
+      "department": "R&D",
+      "transactionType": "expense",
+      "amountTotal": 431000.0,
+      "category": "Komunikasi",
+      "purchaseDate": "2023-12-09",
+      "vendorName": "PD Pranowo (Persero) Tbk",
+      "scores": {
+        "isolationForest": 47.71,
+        "autoencoder": 29.76,
+        "ensemble": 35.15,
+        "fraudScore": 35.15
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": false,
+      "correct": true,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    },
+    {
+      "purchaseId": "PO56221021",
+      "employeeId": "EMP0106",
+      "department": "R&D",
+      "transactionType": "expense",
+      "amountTotal": 219000.0,
+      "category": "Transportasi",
+      "purchaseDate": "2023-03-10",
+      "vendorName": "PD Pranowo Rajasa (Persero) Tbk",
+      "scores": {
+        "isolationForest": 37.54,
+        "autoencoder": 24.35,
+        "ensemble": 28.3,
+        "fraudScore": 28.3
+      },
+      "riskLevel": "LOW",
+      "predictedFraud": false,
+      "actualFraud": false,
+      "correct": true,
+      "reasons": [
+        "Tidak ada indikator spesifik terdeteksi"
+      ]
+    }
+  ]
+}
