@@ -1,0 +1,47 @@
+{
+  "vendorName": "UD Tekno Baru",
+  "companyId": "6b854035-bf55-43f4-8544-a24b3021aff6",
+  "totalTransactions": 4,
+  "totalValue": 18000000.0,
+  "fraudCount": 4,
+  "transactions": [
+    {
+      "purchaseId": "PRC-MEI-017",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 4500000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T14:58:16.521091"
+    },
+    {
+      "purchaseId": "PRC-MEI-030",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 4500000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:02:26.834476"
+    },
+    {
+      "purchaseId": "PRC-MEI-035",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 4500000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:04:14.902973"
+    },
+    {
+      "purchaseId": "PRC-MEI-035",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 4500000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:06:36.780660"
+    }
+  ],
+  "createdAt": "2026-05-17T14:58:16.521091",
+  "updatedAt": "2026-05-17T15:06:36.780660"
+}

@@ -1,0 +1,47 @@
+{
+  "vendorName": "CV Mitra Sejahtera",
+  "companyId": "6b854035-bf55-43f4-8544-a24b3021aff6",
+  "totalTransactions": 4,
+  "totalValue": 3280000.0,
+  "fraudCount": 4,
+  "transactions": [
+    {
+      "purchaseId": "PRC-MEI-019",
+      "purchaseDate": "2026-05-16",
+      "amountTotal": 820000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T14:58:16.644597"
+    },
+    {
+      "purchaseId": "PRC-MEI-032",
+      "purchaseDate": "2026-05-16",
+      "amountTotal": 820000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:02:27.122199"
+    },
+    {
+      "purchaseId": "PRC-MEI-037",
+      "purchaseDate": "2026-05-16",
+      "amountTotal": 820000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:04:15.083253"
+    },
+    {
+      "purchaseId": "PRC-MEI-037",
+      "purchaseDate": "2026-05-16",
+      "amountTotal": 820000.0,
+      "department": "IT",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:06:36.933951"
+    }
+  ],
+  "createdAt": "2026-05-17T14:58:16.644597",
+  "updatedAt": "2026-05-17T15:06:36.933951"
+}

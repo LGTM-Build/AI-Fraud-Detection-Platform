@@ -152,8 +152,11 @@ def _normalize_procurement(raw: dict) -> dict:
 
     return {
         # Identitas
+        "sourceId"               : _safe_str(raw.get("id")),
         "purchaseId"             : _safe_str(raw.get("purchaseId")),
-        "employeeId"             : _safe_str(raw.get("employeeId")),
+        "employeeId"             : _safe_str(
+            raw.get("employeeExternalRef") or raw.get("employeeId")
+        ),
         "module"                 : "procurement",
 
         # Numerik utama
@@ -179,19 +182,30 @@ def _normalize_procurement(raw: dict) -> dict:
         **date_feats,
 
         # Kategorikal raw
-        "transaction_type"       : _safe_str(raw.get("transactionType"), "procurement"),
+        "transaction_type"       : _safe_str(
+            raw.get("transactionType") or raw.get("procurementMethod"),
+            "procurement",
+        ),
         "department"             : _safe_str(raw.get("department")),
         "location"               : _safe_str(raw.get("location")),
-        "category"               : _safe_str(raw.get("category")),
+        "category"               : _safe_str(
+            raw.get("category") or raw.get("procurementMethod")
+        ),
         "itemDescription"        : _safe_str(raw.get("itemDescription")),
         "status"                 : _safe_str(raw.get("status"), "Pending"),
         "vendorName"             : _safe_str(raw.get("vendorName")),
 
         # Encoded (untuk model)
-        "transaction_type_enc"   : _encode(raw.get("transactionType"), _TRANSACTION_TYPE_MAP),
+        "transaction_type_enc"   : _encode(
+            raw.get("transactionType") or raw.get("procurementMethod"),
+            _TRANSACTION_TYPE_MAP,
+        ),
         "department_enc"         : _encode(raw.get("department"), _DEPARTMENT_MAP),
         "location_enc"           : _encode(raw.get("location"), _LOCATION_MAP),
-        "category_enc"           : _encode(raw.get("category"), _CATEGORY_MAP),
+        "category_enc"           : _encode(
+            raw.get("category") or raw.get("procurementMethod"),
+            _CATEGORY_MAP,
+        ),
         "itemDescription_enc"    : abs(hash(_safe_str(raw.get("itemDescription")))) % 100,
         "status_enc"             : _encode(raw.get("status"), _STATUS_MAP),
 
@@ -234,11 +248,16 @@ def _normalize_expense(raw: dict) -> dict:
     date_feats = _date_features(expense_date)
 
     merchant = _safe_str(raw.get("merchant"))
+    description = _safe_str(raw.get("description") or raw.get("itemDescription"))
 
     return {
         # Identitas
+        "sourceId"               : _safe_str(raw.get("id")),
         "purchaseId"             : _safe_str(raw.get("expenseId")),
-        "employeeId"             : _safe_str(raw.get("employeeId")),
+        "expenseId"              : _safe_str(raw.get("expenseId")),
+        "employeeId"             : _safe_str(
+            raw.get("employeeExternalRef") or raw.get("employeeId")
+        ),
         "module"                 : "expense",
 
         # Numerik utama
@@ -268,7 +287,7 @@ def _normalize_expense(raw: dict) -> dict:
         "department"             : _safe_str(raw.get("department")),
         "location"               : _safe_str(raw.get("location")),
         "category"               : _safe_str(raw.get("category")),
-        "itemDescription"        : _safe_str(raw.get("itemDescription")),
+        "itemDescription"        : description,
         "status"                 : _safe_str(raw.get("status"), "Pending"),
         "vendorName"             : merchant,   # merchant = vendor untuk expense
 
@@ -277,7 +296,7 @@ def _normalize_expense(raw: dict) -> dict:
         "department_enc"         : _encode(raw.get("department"), _DEPARTMENT_MAP),
         "location_enc"           : _encode(raw.get("location"), _LOCATION_MAP),
         "category_enc"           : _encode(raw.get("category"), _CATEGORY_MAP),
-        "itemDescription_enc"    : abs(hash(_safe_str(raw.get("itemDescription")))) % 100,
+        "itemDescription_enc"    : abs(hash(description)) % 100,
         "status_enc"             : _encode(raw.get("status"), _STATUS_MAP),
 
         # Placeholder statistik

@@ -15,11 +15,13 @@
 import asyncio
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from schemas import (
-    FraudAnalysisRequest, BatchCallbackPayload,
-    AnalysisType, JobStatus, ModuleType,
+    BatchCallbackPayload,
+    CallbackResultItem,
+    FraudAnalysisRequest,
+    JobStatus,
 )
 from services.normalizer          import normalize
 from services.anomaly_detection_v2 import analyze
@@ -27,6 +29,40 @@ from clients.callback_client      import send_callback
 from workers.job_store            import job_store
 
 logger = logging.getLogger("fradara.worker")
+
+
+def _build_callback_item(module: str, raw_record: dict, result) -> CallbackResultItem:
+    scores = result.scores.model_dump()
+    ai_explanation = ". ".join(result.reasons) if result.reasons else None
+
+    base = {
+        "module": module,
+        "scores": scores,
+        "fraudScore": result.fraudScore,
+        "riskLevel": result.riskLevel,
+        "predictedFraud": result.predictedFraud,
+        "reasons": result.reasons,
+        "aiExplanation": ai_explanation,
+        "raw": {
+            "analysis": result.model_dump(mode="json", exclude_none=True),
+            "sourceRecord": raw_record,
+        },
+    }
+
+    if module == "expense":
+        return CallbackResultItem(
+            **base,
+            id=raw_record.get("id"),
+            expenseDbId=raw_record.get("id"),
+            expenseId=raw_record.get("expenseId"),
+        )
+
+    return CallbackResultItem(
+        **base,
+        id=raw_record.get("id"),
+        procurementId=raw_record.get("id"),
+        purchaseId=raw_record.get("purchaseId"),
+    )
 
 
 async def process_request(job_id: str, request: FraudAnalysisRequest) -> None:
@@ -48,6 +84,7 @@ async def process_request(job_id: str, request: FraudAnalysisRequest) -> None:
     try:
         loop    = asyncio.get_event_loop()
         results = []
+        callback_results = []
 
         for raw in request.records:
             # raw bisa dict atau Pydantic model
@@ -61,40 +98,15 @@ async def process_request(job_id: str, request: FraudAnalysisRequest) -> None:
                 None, analyze, job_id, tx, company_id
             )
             results.append(result)
+            callback_results.append(_build_callback_item(module, rec_dict, result))
 
         # ── Susun summary ─────────────────────────────────────
         elapsed       = round((time.time() - start) * 1000, 2)
-        fraud_detected= sum(1 for r in results if r.predictedFraud)
-        risk_counts   = {"HIGH": 0, "MEDIUM": 0, "LOW": 0, "SAFE": 0}
-        intent_dist   = {}
-
-        for r in results:
-            risk_counts[r.riskLevel.value] += 1
-            k = r.intent.intent.value
-            intent_dist[k] = intent_dist.get(k, 0) + 1
-
-        avg_score = round(
-            sum(r.fraudScore for r in results) / max(total, 1), 2
-        )
-
         batch = BatchCallbackPayload(
-            jobId            = job_id,
-            module           = module,
-            analysisType     = AnalysisType.ANOMALY,
-            total            = total,
-            fraudDetected    = fraud_detected,
-            fraudRate        = round(fraud_detected / total * 100, 2),
-            processingTimeMs = elapsed,
-            summary          = {
-                "riskBreakdown": risk_counts,
-                "intentDist"   : intent_dist,
-                "avgFraudScore": avg_score,
-                "companyId"    : company_id,
-                "cacheUsed"    : company_id is not None,
-            },
-            results         = results,
-            requestMetadata = request.metadata,
-            analyzedAt      = datetime.utcnow(),
+            module=module,
+            generatedAt=datetime.now(timezone.utc),
+            results=callback_results,
+            samplePredictions=callback_results[: min(3, len(callback_results))],
         )
 
         # ── Callback ke Node.js ───────────────────────────────
@@ -107,7 +119,7 @@ async def process_request(job_id: str, request: FraudAnalysisRequest) -> None:
         ok = await send_callback(
             callback_url     = request.callbackUrl,
             callback_headers = cb_headers,
-            payload          = batch.model_dump(mode="json"),
+            payload          = batch.model_dump(mode="json", exclude_none=True),
         )
 
         final_status = JobStatus.DONE if ok else JobStatus.FAILED
@@ -117,7 +129,7 @@ async def process_request(job_id: str, request: FraudAnalysisRequest) -> None:
         logger.info(
             "[%s] Worker DONE module=%s total=%d fraud=%d "
             "time=%.1fms callback=%s",
-            job_id, module, total, fraud_detected,
+            job_id, module, total, sum(1 for r in results if r.predictedFraud),
             elapsed, "OK" if ok else "FAIL",
         )
 

@@ -92,7 +92,8 @@ def root():
         "timestamp"       : datetime.utcnow().isoformat(),
         "supportedModules": ["procurement", "expense"],
         "endpoints"       : {
-            "POST /analyze"                   : "Analisis transaksi (procurement / expense)",
+            "POST /predict"                   : "Analisis transaksi (procurement / expense)",
+            "POST /analyze"                   : "Alias kompatibilitas ke /predict",
             "GET  /jobs/{jobId}"              : "Cek status job",
             "GET  /cache/{companyId}/summary" : "Ringkasan cache perusahaan",
             "DELETE /cache/{companyId}"       : "Reset cache perusahaan",
@@ -109,7 +110,7 @@ def health():
         "useRealModel": settings.USE_REAL_MODEL,
         "modelsDir"   : settings.MODELS_DIR,
         "totalJobs"   : len(job_store.all()),
-        "nodeJsUrl"   : settings.NODEJS_BASE_URL,
+        "backendBaseUrl": settings.BACKEND_BASE_URL,
     }
 
 
@@ -141,14 +142,7 @@ def get_job(job_id: str):
 # ENDPOINTS — Analyze
 # ─────────────────────────────────────────────────────────────
 
-@app.post(
-    "/analyze",
-    response_model = AcceptedResponse,
-    status_code    = 202,
-    tags           = ["Analyze"],
-    dependencies   = AUTH,
-)
-async def analyze(
+async def _accept_analysis_request(
     request         : FraudAnalysisRequest,
     background_tasks: BackgroundTasks,
 ):
@@ -193,6 +187,34 @@ async def analyze(
         module  = request.module,
         total   = total,
     )
+
+
+@app.post(
+    "/predict",
+    response_model = AcceptedResponse,
+    status_code    = 202,
+    tags           = ["Analyze"],
+    dependencies   = AUTH,
+)
+async def predict(
+    request: FraudAnalysisRequest,
+    background_tasks: BackgroundTasks,
+):
+    return await _accept_analysis_request(request, background_tasks)
+
+
+@app.post(
+    "/analyze",
+    response_model = AcceptedResponse,
+    status_code    = 202,
+    tags           = ["Analyze"],
+    dependencies   = AUTH,
+)
+async def analyze(
+    request: FraudAnalysisRequest,
+    background_tasks: BackgroundTasks,
+):
+    return await _accept_analysis_request(request, background_tasks)
 
 
 # ─────────────────────────────────────────────────────────────

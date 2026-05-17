@@ -1,37 +1,29 @@
-# schemas.py
-# ─────────────────────────────────────────────────────────────
-# Semua Pydantic schema untuk Fradara Fraud Detection Service
-# ─────────────────────────────────────────────────────────────
-
 from __future__ import annotations
-from datetime   import datetime
-from enum       import Enum
-from typing     import Any, Optional
+
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-# ─────────────────────────────────────────────────────────────
-# ENUMS
-# ─────────────────────────────────────────────────────────────
-
 class ModuleType(str, Enum):
     PROCUREMENT = "procurement"
-    EXPENSE     = "expense"
+    EXPENSE = "expense"
 
 
 class JobStatus(str, Enum):
-    PENDING    = "PENDING"
+    PENDING = "PENDING"
     PROCESSING = "PROCESSING"
-    DONE       = "DONE"
-    FAILED     = "FAILED"
+    DONE = "DONE"
+    FAILED = "FAILED"
 
 
 class RiskLevel(str, Enum):
-    HIGH   = "HIGH"    # 75–100
-    MEDIUM = "MEDIUM"  # 45–74
-    LOW    = "LOW"     # 20–44
-    SAFE   = "SAFE"    # 0–19
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    SAFE = "SAFE"
 
 
 class AnalysisType(str, Enum):
@@ -39,211 +31,136 @@ class AnalysisType(str, Enum):
 
 
 class IntentType(str, Enum):
-    INFLATED_PRICE      = "INFLATED_PRICE"
-    DUPLICATE_VENDOR    = "DUPLICATE_VENDOR"
-    SPLIT_TRANSACTION   = "SPLIT_TRANSACTION"
+    INFLATED_PRICE = "INFLATED_PRICE"
+    DUPLICATE_VENDOR = "DUPLICATE_VENDOR"
+    SPLIT_TRANSACTION = "SPLIT_TRANSACTION"
     WEEKEND_TRANSACTION = "WEEKEND_TRANSACTION"
-    ABNORMAL_AMOUNT     = "ABNORMAL_AMOUNT"
-    SUSPICIOUS_VENDOR   = "SUSPICIOUS_VENDOR"
-    UNUSUAL_PATTERN     = "UNUSUAL_PATTERN"
-    NORMAL              = "NORMAL"
+    ABNORMAL_AMOUNT = "ABNORMAL_AMOUNT"
+    SUSPICIOUS_VENDOR = "SUSPICIOUS_VENDOR"
+    UNUSUAL_PATTERN = "UNUSUAL_PATTERN"
+    NORMAL = "NORMAL"
 
-
-# ─────────────────────────────────────────────────────────────
-# REQUEST — Record Procurement
-# ─────────────────────────────────────────────────────────────
-
-class ProcurementRecord(BaseModel):
-    purchaseId             : str
-    transactionType        : Optional[str]   = "Procurement"
-    employeeId             : Optional[str]   = None
-    department             : Optional[str]   = None
-    location               : Optional[str]   = None
-    purchaseDate           : Optional[str]   = None
-    approvalDate           : Optional[str]   = None
-    invoiceNumber          : Optional[str]   = None
-    invoiceDate            : Optional[str]   = None
-    paymentDate            : Optional[str]   = None
-    vendorName             : Optional[str]   = None
-    vendorRegistrationDate : Optional[str]   = None
-    contractDate           : Optional[str]   = None
-    vendorBankAccount      : Optional[str]   = None
-    vendorAddress          : Optional[str]   = None
-    vendorContact          : Optional[str]   = None
-    itemId                 : Optional[str]   = None
-    itemDescription        : Optional[str]   = None
-    category               : Optional[str]   = None
-    unitPrice              : Optional[float] = 0.0
-    quantity               : Optional[float] = 1.0
-    amountTotal            : Optional[float] = 0.0
-    status                 : Optional[str]   = "Pending"
-    contractId             : Optional[str]   = None
-
-
-# ─────────────────────────────────────────────────────────────
-# REQUEST — Record Expense
-# ─────────────────────────────────────────────────────────────
-
-class ExpenseRecord(BaseModel):
-    expenseId      : str
-    employeeId     : Optional[str]   = None
-    department     : Optional[str]   = None
-    location       : Optional[str]   = None
-    expenseDate    : Optional[str]   = None
-    approvalDate   : Optional[str]   = None
-    merchant       : Optional[str]   = None
-    category       : Optional[str]   = None
-    itemDescription: Optional[str]   = None
-    unitPrice      : Optional[float] = 0.0
-    quantity       : Optional[float] = 1.0
-    amountTotal    : Optional[float] = 0.0
-    status         : Optional[str]   = "Pending"
-    paymentMethod  : Optional[str]   = None
-    receiptNumber  : Optional[str]   = None
-
-
-# ─────────────────────────────────────────────────────────────
-# REQUEST — Metadata & Headers
-# ─────────────────────────────────────────────────────────────
 
 class RequestMetadata(BaseModel):
-    companyId  : Optional[str] = None
-    requestedBy: Optional[str] = None
-    source     : Optional[str] = None
+    companyId: str | None = None
+    requestedBy: str | None = None
+    source: str | None = None
 
 
 class CallbackHeaders(BaseModel):
-    x_api_key    : Optional[str] = Field(None, alias="x-api-key")
-    authorization: Optional[str] = Field(None, alias="Authorization")
+    x_internal_api_key: str | None = Field(None, alias="x-internal-api-key")
+    authorization: str | None = Field(None, alias="Authorization")
 
     model_config = {"populate_by_name": True}
 
 
-# ─────────────────────────────────────────────────────────────
-# REQUEST — Main Request Body
-# ─────────────────────────────────────────────────────────────
-
 class FraudAnalysisRequest(BaseModel):
-    module         : ModuleType
-    callbackUrl    : str
-    callbackHeaders: Optional[CallbackHeaders] = None
-    metadata       : Optional[RequestMetadata] = None
-    records        : list[dict[str, Any]]
+    module: ModuleType
+    callbackUrl: str
+    callbackHeaders: CallbackHeaders | None = None
+    metadata: RequestMetadata | None = None
+    records: list[dict[str, Any]]
 
-
-# ─────────────────────────────────────────────────────────────
-# RESPONSE — Job
-# ─────────────────────────────────────────────────────────────
 
 class AcceptedResponse(BaseModel):
-    jobId  : str
+    jobId: str
     message: str
-    status : JobStatus
-    module : ModuleType
-    total  : int
+    status: JobStatus
+    module: ModuleType
+    total: int
 
 
 class JobInfo(BaseModel):
-    jobId    : str
-    status   : JobStatus
-    module   : ModuleType
-    total    : int
+    jobId: str
+    status: JobStatus
+    module: ModuleType
+    total: int
     createdAt: datetime
     updatedAt: datetime
-    error    : Optional[str] = None
+    error: str | None = None
 
-
-# ─────────────────────────────────────────────────────────────
-# ANALYSIS RESULT — Per Transaksi
-# ─────────────────────────────────────────────────────────────
 
 class ModelScores(BaseModel):
     isolationForest: float
-    autoencoder    : float
-    ensemble       : float
-    fraudScore     : float
+    autoencoder: float
+    ensemble: float
+    fraudScore: float
 
 
 class IntentResult(BaseModel):
-    intent     : IntentType
-    confidence : float
+    intent: IntentType
+    confidence: float
     description: str
 
 
 class TransactionResult(BaseModel):
-    # Identitas transaksi
-    transactionId  : str
-    module         : ModuleType
-
-    # Skor & prediksi
-    fraudScore     : float          # 0–100
-    predictedFraud : bool
-    riskLevel      : RiskLevel
-    scores         : ModelScores
-
-    # Intent & alasan
-    intent         : IntentResult
-    reasons        : list[str]
-
-    # Info tambahan
-    amountTotal    : Optional[float] = None
-    department     : Optional[str]   = None
-    vendorName     : Optional[str]   = None   # procurement
-    merchant       : Optional[str]   = None   # expense
-    category       : Optional[str]   = None
-    transactionDate: Optional[str]   = None
+    transactionId: str
+    module: ModuleType
+    fraudScore: float
+    predictedFraud: bool
+    riskLevel: RiskLevel
+    scores: ModelScores
+    intent: IntentResult
+    reasons: list[str]
+    amountTotal: float | None = None
+    department: str | None = None
+    vendorName: str | None = None
+    merchant: str | None = None
+    category: str | None = None
+    transactionDate: str | None = None
 
 
-# ─────────────────────────────────────────────────────────────
-# CALLBACK PAYLOAD — Dikirim ke Node.js
-# ─────────────────────────────────────────────────────────────
+class CallbackResultItem(BaseModel):
+    module: ModuleType | None = None
+    id: str | None = None
+    procurementId: str | None = None
+    purchaseId: str | None = None
+    expenseDbId: str | None = None
+    expenseId: str | None = None
+    scores: dict[str, float] | None = None
+    fraudScore: float | None = None
+    riskLevel: RiskLevel | None = None
+    predictedFraud: bool | None = None
+    reasons: list[str] | None = None
+    aiExplanation: str | None = None
+    raw: dict[str, Any] | None = None
+
 
 class BatchCallbackPayload(BaseModel):
-    jobId            : str
-    module           : ModuleType
-    analysisType     : AnalysisType
-    total            : int
-    fraudDetected    : int
-    fraudRate        : float
-    processingTimeMs : float
-    summary          : dict[str, Any]
-    results          : list[TransactionResult]
-    requestMetadata  : Optional[RequestMetadata] = None
-    analyzedAt       : datetime
+    module: ModuleType
+    generatedAt: datetime
+    results: list[CallbackResultItem]
+    samplePredictions: list[CallbackResultItem] | None = None
 
-
-# ─────────────────────────────────────────────────────────────
-# CACHE SCHEMA — Dipakai di company_cache.py
-# ─────────────────────────────────────────────────────────────
 
 class VendorHistoryItem(BaseModel):
-    purchaseId  : str
+    purchaseId: str
     purchaseDate: str
-    amountTotal : float
-    status      : str
-    department  : Optional[str] = None
-    isFraud     : bool = False
+    amountTotal: float
+    status: str
+    department: str | None = None
+    isFraud: bool = False
 
 
 class VendorHistory(BaseModel):
-    vendorName        : str
-    totalTransactions : int
-    totalValue        : float
-    transactions      : list[VendorHistoryItem]
+    vendorName: str
+    totalTransactions: int
+    totalValue: float
+    transactions: list[VendorHistoryItem]
 
 
 class ExpenseHistoryItem(BaseModel):
-    expenseId  : str
+    expenseId: str
     expenseDate: str
     amountTotal: float
-    category   : Optional[str] = None
-    status     : str
-    isFraud    : bool = False
+    category: str | None = None
+    status: str
+    isFraud: bool = False
 
 
 class ExpenseHistory(BaseModel):
     employeeExternalRef: str
-    department         : Optional[str] = None
-    totalTransactions  : int
-    totalValue         : float
-    transactions       : list[ExpenseHistoryItem]
+    department: str | None = None
+    totalTransactions: int
+    totalValue: float
+    transactions: list[ExpenseHistoryItem]

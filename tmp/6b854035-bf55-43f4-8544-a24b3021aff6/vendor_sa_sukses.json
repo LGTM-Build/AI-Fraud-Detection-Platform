@@ -1,0 +1,47 @@
+{
+  "vendorName": "SA Sukses",
+  "companyId": "6b854035-bf55-43f4-8544-a24b3021aff6",
+  "totalTransactions": 4,
+  "totalValue": 1000000.0,
+  "fraudCount": 4,
+  "transactions": [
+    {
+      "purchaseId": "PRC-MEI-018",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 250000.0,
+      "department": "General Affairs",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T14:58:16.387702"
+    },
+    {
+      "purchaseId": "PRC-MEI-031",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 250000.0,
+      "department": "General Affairs",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:02:26.962146"
+    },
+    {
+      "purchaseId": "PRC-MEI-036",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 250000.0,
+      "department": "General Affairs",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:04:14.752633"
+    },
+    {
+      "purchaseId": "PRC-MEI-036",
+      "purchaseDate": "2026-05-15",
+      "amountTotal": 250000.0,
+      "department": "General Affairs",
+      "status": "Pending",
+      "isFraud": true,
+      "processedAt": "2026-05-17T15:06:36.622731"
+    }
+  ],
+  "createdAt": "2026-05-17T14:58:16.387702",
+  "updatedAt": "2026-05-17T15:06:36.622731"
+}
