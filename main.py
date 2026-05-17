@@ -102,6 +102,11 @@ def root():
     }
 
 
+@app.head("/", include_in_schema=False)
+def root_head():
+    return
+
+
 @app.get("/health", tags=["Info"])
 def health():
     """Health check detail."""
@@ -112,6 +117,11 @@ def health():
         "totalJobs"   : len(job_store.all()),
         "backendBaseUrl": settings.BACKEND_BASE_URL,
     }
+
+
+@app.head("/health", include_in_schema=False)
+def health_head():
+    return
 
 
 # ─────────────────────────────────────────────────────────────
